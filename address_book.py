@@ -163,8 +163,14 @@ class AddressBook(UserDict):
                 if phone.value == value:
                     return record
 
-    def load_file(self, data):
-        self.data.update(data)
+    def load_file(self):
+        with open("saved_book.bin", "rb") as file:
+            result = pickle.load(file)
+        self.data.update(result)
+
+    def save_file(self):
+        with open("saved_book.bin", "wb") as file:
+            pickle.dump(self.data, file)
 
     @staticmethod
     def iterator(phone_book):
@@ -267,12 +273,12 @@ def change_handler(user_input):
         if user_input[0] == user_input[1]:
             return f"Its the same phone {user_input[1]}"
         elif book.find_record(user_input[0]):
-                found_record = book.find_record(user_input[0])
-                found_record.change_phone(user_input[0], user_input[1])
-                book.delete_record(found_record.name.value)
-                book.add_record(found_record)
-                return f"Contact {found_record.name.value.title()}: old number {user_input[0]} " \
-                       f"successfully changed to {user_input[1]}"
+            found_record = book.find_record(user_input[0])
+            found_record.change_phone(user_input[0], user_input[1])
+            book.delete_record(found_record.name.value)
+            book.add_record(found_record)
+            return f"Contact {found_record.name.value.title()}: old number {user_input[0]} " \
+                   f"successfully changed to {user_input[1]}"
         else:
             return f"Phone {user_input[0]} no found"
 
@@ -362,24 +368,12 @@ def pagination_handle(user_input):
         return "\n".join(iter_list)
 
 
-def book_saver(book):
-    with open("saved_book.bin", "wb") as file:
-        pickle.dump(book, file)
-
-
-def book_loader():
-    with open("saved_book.bin", "rb") as file:
-        result = pickle.load(file)
-    return result
-
-
 @input_error
 def phone_handler(user_input):
-    if len(user_input):
-        if book.find_record(user_input[0]):
-            return book.find_record(user_input[0]).get_info()
-        else:
-            return f"{user_input[0]} not found"
+    if book.find_record(user_input[0].strip()):
+        return book.find_record(user_input[0]).get_info()
+    else:
+        return f"{user_input[0]} not found"
 
 
 def search_handler(user_input):
@@ -425,42 +419,16 @@ def get_handler(operator):
 
 
 def main():
-    # rec = Record('ivan')
-    # rec.add_phone('380501234567')
-    # rec.add_birthday('02 02')
-    # book.add_record(rec)
-    # rec1 = Record('petro')
-    # rec1.add_phone('380501234567')
-    # book.add_record(rec1)
-    # rec1 = Record('pet')
-    # rec1.add_phone('380501234567')
-    # book.add_record(rec1)
-    # rec1 = Record('red')
-    # rec1.add_phone('380501234567')
-    # book.add_record(rec1)
-    # rec1 = Record('sar')
-    # rec1.add_phone('380501234567')
-    # book.add_record(rec1)
-    # rec1 = Record('ert')
-    # rec1.add_phone('380501234567')
-    # book.add_record(rec1)
-    # rec1 = Record('stree')
-    # rec1.add_phone('380501234567')
-    # book.add_record(rec1)
-    # rec1 = Record('ewq')
-    # rec1.add_phone('380501234567')
-    # book.add_record(rec1)
     try:
-        book.load_file(book_loader())
+        book.load_file()
     except Exception:
         pass
-
     while True:
         user_input = input_parser()
         string = str(get_handler(user_input[0])(user_input[1:]))
         print(string)
         if string == "Good bye!":
-            book_saver(book)
+            book.save_file()
             exit()
 
 
