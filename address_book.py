@@ -2,6 +2,7 @@
 from collections import UserDict
 from datetime import datetime, timedelta
 import pickle
+import json
 
 
 class Field:
@@ -108,7 +109,7 @@ class Record:
             phones_info += f"{phone.value}, "
         if self.birthday:
             birthday_str = f"{self.birthday.value}"
-        return f"{self.name.value.title()} {phones_info[:-2]} {birthday_str}"
+        return f"{self.name.value}|{phones_info[:-2]}|{birthday_str}"
 
     def delete_phone(self, delete_phone):
         old_len = len(self.phones)
@@ -171,6 +172,33 @@ class AddressBook(UserDict):
     def save_file(self):
         with open("saved_book.bin", "wb") as file:
             pickle.dump(self.data, file)
+
+    def save_file_json(self):
+        all_record = {}
+        for contact in self.data:
+            all_record.update({contact: self.data[contact].get_search()})
+        with open("saved_book.json", "w") as file:
+            json.dump(all_record, file)
+
+    def load_file_json(self):
+        with open("saved_book.json", "r") as file:
+            data_json = json.load(file)
+        for name, data in data_json.items():
+            record = Record(name)
+            list_data = data.split("|")
+            print(list_data)
+            if list_data[1].find(",") != -1:
+                phones = list_data[1].split(", ")
+                print(phones)
+                for phone in phones:
+                    record.add_phone(phone)
+            else:
+                phones = list_data[1]
+                record.add_phone(phones)
+            if list_data[2]:
+                record.add_birthday(list_data[2])
+            print(record.get_info())
+            book.add_record(record)
 
     @staticmethod
     def iterator(phone_book):
@@ -383,7 +411,7 @@ def search_handler(user_input):
             if book.get(record).get_search().find(user_input[0]) != -1:
                 find_data += f"{book.get(record).get_info()}\n"
     if not find_data:
-        find_data = f"{user_input[0]} not found  "
+        find_data = f"{user_input[0]} not found"
     return find_data[:-2]
 
 
@@ -420,15 +448,18 @@ def get_handler(operator):
 
 def main():
     try:
-        book.load_file()
+        #book.load_file()
+        book.load_file_json()
     except Exception:
         pass
+
     while True:
         user_input = input_parser()
         string = str(get_handler(user_input[0])(user_input[1:]))
         print(string)
         if string == "Good bye!":
-            book.save_file()
+            #book.save_file()
+            book.save_file_json()
             exit()
 
 
